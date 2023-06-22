@@ -1,0 +1,60 @@
+[
+  {
+    "name": "Brad",
+    "email": "name@gmail.com",
+    "company": "company@company",
+    "password": "1234"
+  },
+  {
+    "email": "name@gmail.com",
+    "password": "1234"
+  },
+  {
+    "currentStatus": [
+      "Approved",
+      "Not approved",
+      "Pedning"
+    ],
+    "comments": "anyComments",
+    "documentID": "CS167HK",
+    "autoResend": 1,
+    "deliveryDate": "03/09/20203",
+    "deliveryTime": "4:03pm",
+    "documentRevisionNumber": [
+      "A1",
+      "B1",
+      "B2",
+      "C1",
+      "C2"
+    ],
+    "contractStart": "03/06/2023",
+    "contractEnd": "03/06/2023",
+    "contractType": "Building Contract",
+    "name": "Country shopping Mall",
+    "coSigned": "bluedill inc",
+    "recipient": [
+      "firstUser@gmail.com"
+    ]
+  },
+  {
+    "packageName": "Free",
+    "duration": "1 Month",
+    "amount": null
+  },
+  {
+    "packageName": "Meidium & Large Scale Business",
+    "duration": "1 Year",
+    "amount": 60000
+  },
+  {
+    "planID": "1",
+    "description": [
+      "First Descriptio",
+      "S Description",
+      "Third Description"
+    ]  
+  }
+
+
+
+]
