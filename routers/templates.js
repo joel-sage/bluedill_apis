@@ -10,7 +10,7 @@ const storage = multer.diskStorage({
     },
 
     filename: function (req, file, cb) {
-        const fileAddons = ['TF', 'SN']
+        const fileAddons = ['TF', 'SN'];
         const pre = 'TF';
         const suf = 'SN'; 
         // File validation Comming soon;

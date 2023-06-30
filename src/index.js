@@ -7,13 +7,15 @@ const PORT = process.env.PORT | 5000;
 
 app.use(Cors());
 app.use(express.json());
+app.use(express.urlencoded({extended: false}))
 app.use('/mainProduct', require('../routers/Product'));
 app.use('/client', require('../routers/user'));
 app.use('/dashboard', require('../routers/dashboard'));
 app.use('/tempUpload', require('../routers/templates'));
 app.use('/setting', require('../routers/settings'));
-app.use('/plan', require('../routers/plans'))
-app.use('/collaboration', require('../routers/collaborators'))
+app.use('/plan', require('../routers/plans'));
+app.use('/collaboration', require('../routers/collaborators'));
+app.use('/converter', require('../routers/convert'));
 app.listen(PORT, () => {
     console.log(`app is runing on port localhost:${PORT}`);
 }) 
