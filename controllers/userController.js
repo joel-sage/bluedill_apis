@@ -1,6 +1,7 @@
 const { creatUser, db_con } = require("../hooks/mysqlDB");
 const { currentDate: date_created } = require("../hooks/useCurrentDate");
 const jwt = require("jsonwebtoken");
+require('dotenv').config();
 const create = async (req, res) => {
   const { name, email, company_name, password } = req.body;
 
@@ -46,7 +47,7 @@ const loginWithAuthentication = async (req, res) => {
     (err, success) => {
       if (err) throw err;
       if (Object.keys(success).length > 0) {
-        const token =  jwt.sign({ email }, "sage_ssKey", { expiresIn: "1 day" });
+        const token =  jwt.sign({ email }, process.env.NODE_JWT_SIGN_TOKEN_KEY, { expiresIn: "1 day" });
         res.cookie("token", token, {
           httpOnly:false
         })
