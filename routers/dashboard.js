@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { home } = require('../controllers/dashboardController');
-const { validateToken } = require('../middleware/authenticateUser')
+const { jwtVerification } = require("../middleware/authUserVerification.js");
 
-router.route('/').post(validateToken, home);
+router.route('/').post(jwtVerification, home);
 
 module.exports = router;

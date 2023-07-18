@@ -2,7 +2,9 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const { uploadTemplate, getTemplates, getTemplate } = require('../controllers/templateController');
+const { jwtVerification } = require("../middleware/authUserVerification.js");
 
+ 
 // Set up the storage for uploaded files 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -22,6 +24,6 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 router.route('/upload').post(upload.single('image'), uploadTemplate);
-router.route('/uploads').get(getTemplates)
-router.route('/template/:id').get(getTemplate)
+router.route('/uploads').get(jwtVerification,getTemplates)
+router.route('/template/:id').get(jwtVerification,getTemplate)
 module.exports = router;  
