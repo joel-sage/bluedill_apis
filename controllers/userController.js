@@ -19,7 +19,6 @@ const create = async (req, res) => {
     date.getSeconds(),
   ];
 
-
   db_con.query(
     `SELECT * FROM ${`users`} WHERE ${`email`} = '${email}'`,
     (err, success) => {
@@ -40,27 +39,17 @@ const create = async (req, res) => {
 };
 
 // User Login Authentication
-const authenthicate = async (req, res) => {
-  const { body } = req;
-  const password = body.password;
-  const email = body.email;
+const loginWithAuthentication = async (req, res) => {
+  const { password , email } = req.body;
   db_con.query(
     `SELECT * FROM ${`users`} WHERE ${`email`} = '${email}' AND ${`password`} = '${password}'`,
     (err, success) => {
       if (err) throw err;
       if (Object.keys(success).length > 0) {
-        jwt.sign(
-          { success },
-          "sage_ssKey",
-          { expiresIn: "1 day" },
-          (err, tokenData) => {
-            if (tokenData == "undefined") {
-              res.sendStaus(403);
-            } else {
-              res.json({ messgae: "Authenticated", tokenData });
-            }
-          }
-        );
+        const token =  jwt.sign({ email }, "sage_ssKey", { expiresIn: "1 day" });
+        res.cookie("token", token, {
+          httpOnly:false
+        })
       } else {
         res.status(400).json({ message: "Invalid Email or Password" });
       }
@@ -70,5 +59,5 @@ const authenthicate = async (req, res) => {
 
 module.exports = {
   create,
-  authenthicate,
+ loginWithAuthentication,
 };
