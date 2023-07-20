@@ -1,6 +1,8 @@
 const { creatUser, db_con } = require("../hooks/mysqlDB");
 const { currentDate: date_created } = require("../hooks/useCurrentDate");
 const jwt = require("jsonwebtoken");
+require('dotenv').config();
+
 const create = async (req, res) => {
   const { name, email, company_name, password } = req.body;
 
@@ -19,9 +21,7 @@ const create = async (req, res) => {
     date.getSeconds(),
   ];
 
-
-  db_con.query(
-    `SELECT * FROM ${`users`} WHERE ${`email`} = '${email}'`,
+  db_con.query(`SELECT * FROM ${`users`} WHERE ${`email`} = '${email}'`,
     (err, success) => {
       // CHECKING IF THE DETAILS IS ALREADY IN USE BEFORE CREATING;
       if (Object.keys(success).length < 1) {
@@ -40,35 +40,23 @@ const create = async (req, res) => {
 };
 
 // User Login Authentication
-const authenthicate = async (req, res) => {
-  const { body } = req;
-  const password = body.password;
-  const email = body.email;
-  db_con.query(
-    `SELECT * FROM ${`users`} WHERE ${`email`} = '${email}' AND ${`password`} = '${password}'`,
-    (err, success) => {
+const loginWithAuthentication = async (req, res) => {
+  const { password , email } = req.body;
+  db_con.query(`SELECT * FROM users WHERE email = '${email}' AND password = '${password}'`,
+    (err, userPayload) => {
       if (err) throw err;
-      if (Object.keys(success).length > 0) {
-        jwt.sign(
-          { success },
-          "sage_ssKey",
-          { expiresIn: "1 day" },
-          (err, tokenData) => {
-            if (tokenData == "undefined") {
-              res.sendStaus(403);
-            } else {
-              res.json({ messgae: "Authenticated", tokenData });
-            }
-          }
-        );
+      if (Object.keys(userPayload).length > 0) {
+        const token = jwt.sign({ userPayload }, process.env.NODE_JWT_SIGN_TOKEN_KEY, { expiresIn: "1 day" });
+        res.cookie("token", token, {httpOnly:false})
+        res.status(200).json({"message": "User Authenticated"})
       } else {
         res.status(400).json({ message: "Invalid Email or Password" });
       }
     }
   );
-};
+}; 
 
 module.exports = {
   create,
-  authenthicate,
+ loginWithAuthentication,
 };

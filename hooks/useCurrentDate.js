@@ -9,7 +9,7 @@ const [month, day, year] = [
 // Destructuring hour time and second
 const [hour, minutes, seconds] = [
   date.getHours(),
-  date.getMinutes(),
+  date.getMinutes(), 
   date.getSeconds(),
 ];
 
@@ -18,4 +18,4 @@ const currentDate = `${month}-${day}-${year} ${hour}:${minutes}:${seconds}`;
 
 module.exports = {
     currentDate,
-}
+} 
