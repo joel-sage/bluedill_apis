@@ -9,7 +9,7 @@ const {
 
 const converterFile = async (req, res) => {
   try {
-    const { filename, error } = fileUploadToDIR(
+    const { filename, error } = await fileUploadToDIR(
       "/public/imageUpload/",
       req,
       res
@@ -18,35 +18,42 @@ const converterFile = async (req, res) => {
     if (error) {
       res.status(200).json({ error: "Error encountered" });
     }
-    const documentExtension = getExtension(filename);
-    const documentExtensionLower = documentExtension.toLowerCase();
+    const fileFormat = req.body.format;
+    const {documentExtension , fileAbsoluteName} = getExtension(filename);
     const imageDIR = getDirectory("/public/imageUpload/");
     const imageDIRConvertedSave = getDirectory("/public/convertedFile/");
-    switch (documentExtensionLower) {
-      case ".docx":
+    const convertFileFormat = fileFormat.toLowerCase();
+    switch (convertFileFormat) {
+      case "pdf":
         {
-          fileConverterManager(
+     await fileConverterManager(
             imageDIR + filename,
             "pdf",
-            imageDIRConvertedSave
+            imageDIRConvertedSave,
+            fileAbsoluteName,
+            res
           );
         }
         break;
-      case ".pdf":
+      case "docx":
         {
-          fileConverterManager(
+      await  fileConverterManager(
             imageDIR + filename,
             "docx",
-            imageDIRConvertedSave
+            imageDIRConvertedSave,
+            fileAbsoluteName,
+            res
           );
         }
         break;
-      case ".xl":
+      case "xl":
         {
-          fileConverterManager(
+     await fileConverterManager(
             imageDIR + filename,
             "pdf",
-            imageDIRConvertedSave
+            imageDIRConvertedSave,
+            fileAbsoluteName,
+            res
           );
         }
         break;
