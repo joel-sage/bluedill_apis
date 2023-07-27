@@ -1,8 +1,11 @@
 const path = require("path");
-require('dotenv').config();
+require("dotenv").config();
 const convertApi = require("convertapi")(process.env.NODE_CONVERT_API_KEY);
-// const convertApi = require("convertapi")('vEtunDJ4JbkdygNs');
-const getExtension = (filename) => path.extname(filename);
+const getExtension = (filename) => {
+  const documentExtension = path.extname(filename);
+  const fileAbsoluteName = filename.split(".")[0];
+  return { documentExtension, fileAbsoluteName };
+};
 
 const getDirectory = (filePath) => path.join(process.cwd(), filePath);
 
@@ -21,21 +24,30 @@ const fileUploadToDIR = (dirName, req, res) => {
   return { filename, error };
 };
 
-const fileConverterManager = (convertFromFileDIR, convertTo, saveToDir) => {
-  convertApi
-    .convert(convertTo, { File: convertFromFileDIR })
-    .then(function (result) {
-      // get converted file url
-      console.log("Converted file url: " + result.file.url);
-      // save to file
-      return result.file.save(saveToDir + "." + convertTo);
-    })
-    .then(function (file) {
-      console.log("File saved: " + file);
-    })
-    .catch(function (e) {
-      console.error(e.toString());
+const fileConverterManager = async (
+  convertFromFileDIR,
+  convertTo,
+  saveToDir,
+  filename,
+  res
+) => {
+  try {
+    const result = await convertApi.convert(convertTo, {
+      File: convertFromFileDIR,
     });
+    const convertedFileServerURL = result.file.url;
+    const convertedFileLocalURL = await result.file.save(
+      saveToDir + filename + "." + convertTo
+    );
+    res
+      .status(200)
+      .json({
+        serverURL: convertedFileServerURL,
+        localURL: convertedFileLocalURL,
+      });
+  } catch (e) {
+    console.error(e.toString());
+  }
 };
 
 module.exports = {
