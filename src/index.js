@@ -23,6 +23,7 @@ app.use('/collaboration', require('../routers/collaborators'));
 app.use('/converter', require('../routers/convert'));
 app.use('/workSaves', require('../routers/workSaves'))
 app.use('/chat', require('../routers/chats'));
+app.use('/save', require('../routers/workSaves'));
 
 app.listen(PORT, () => {
     console.log(`app is running on port localhost:${PORT}`);

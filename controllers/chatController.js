@@ -60,4 +60,4 @@ module.exports = {
     chats,
     chat,
     updateMessageStatus,
-}
+} 

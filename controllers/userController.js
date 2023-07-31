@@ -48,7 +48,7 @@ const loginWithAuthentication = async (req, res) => {
       if (Object.keys(userPayload).length > 0) {
         const token = jwt.sign({ userPayload }, process.env.NODE_JWT_SIGN_TOKEN_KEY, { expiresIn: "1 day" });
         res.cookie("token", token, {httpOnly:false})
-        res.status(200).json({"message": "User Authenticated"})
+        res.status(200).json({"message": "User Authenticated", userPayload})
       } else {
         res.status(400).json({ message: "Invalid Email or Password" });
       }
