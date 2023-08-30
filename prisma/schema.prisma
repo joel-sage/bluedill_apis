@@ -20,3 +20,23 @@ model Users {
   password String
   company String
 }
+
+model Template {
+  @@map("template")
+  id Int @id @default(autoincrement())
+  templateName String @unique
+  file_name String
+  template_id String
+  date_uploaded DateTime @default(now())
+}
+
+model Chats {
+  @@map("chats")
+  id Int @id @default(autoincrement()) 
+  message String
+  sender_user_id String
+  receiver_user_id String
+  status Boolean
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

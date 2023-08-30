@@ -25,14 +25,14 @@ const create = async (req, res) => {
     const latestQuery = await prisma.users.findMany({
       orderBy: {id: 'desc'}, select: {id: true}, take: 1,
     })
-    const newId = latestQuery[0].id
+    const newId = (latestQuery.length > 0)? latestQuery[0].id : 1;
     const create = await prisma.users.create({
       data: {
-        userId: `Grew${newId + 1}`,
+        userId: `Grew${ (newId != 1)? newId + 1 : 1}`,
         email: email,
         firstname: firstname,
         lastname: lastname,
-        password: password,
+        password: password, 
         company: company 
       } 
     })
@@ -40,19 +40,6 @@ const create = async (req, res) => {
   } else {
     res.status(300).json({"message": "Details Parsed is already in use"})
   }
-
-
-  // if (create) {
-  //   res.status(201).json({ create })
-  // } else {
-  //   res.status(400).json({ create })
-  // }
-
-
-
-
-
-
 
   // db_con.query(`SELECT * FROM ${`users`} WHERE ${`email`} = '${email}'`,
   //   (err, success) => {
@@ -89,7 +76,6 @@ const loginWithAuthentication = async (req, res) => {
   } else { 
     res.status(400).json({ message: "Invalid User Details" });
   }
-
   
   // db_con.query(`SELECT id, first_name, last_name, user_id, email, company FROM users WHERE email = '${email}' AND password = '${password}'`,
   //   (err, userPayload) => {
