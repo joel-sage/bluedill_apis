@@ -10,7 +10,6 @@ const prisma = new PrismaClient()
 
 const create = async (req, res) => {
   const {firstname, lastname, email, company, password } = req.body;
-
   const checkExistence = await prisma.users.findUnique({
     where: {
       email: email,
@@ -25,10 +24,10 @@ const create = async (req, res) => {
     const latestQuery = await prisma.users.findMany({
       orderBy: {id: 'desc'}, select: {id: true}, take: 1,
     })
-    const newId = (latestQuery.length > 0)? latestQuery[0].id : 1;
-    const create = await prisma.users.create({
+    const newId = (latestQuery.length > 0) ? latestQuery[0].id : 1;
+    const newUser = await prisma.users.create({
       data: {
-        userId: `Grew${ (newId != 1)? newId + 1 : 1}`,
+        userId: `Grew${(latestQuery.length > 0)? newId + 1 : 1}`,
         email: email,
         firstname: firstname,
         lastname: lastname,
@@ -40,6 +39,7 @@ const create = async (req, res) => {
   } else {
     res.status(300).json({"message": "Details Parsed is already in use"})
   }
+
 
   // db_con.query(`SELECT * FROM ${`users`} WHERE ${`email`} = '${email}'`,
   //   (err, success) => {
