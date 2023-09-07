@@ -66,6 +66,13 @@ const loginWithAuthentication = async (req, res) => {
     where: {
       email: email,
       password: password
+    },
+    select: {
+      userId: true,
+      email: true,
+      firstname: true,
+      lastname: true,
+      company: true,
     }
   })  
 
