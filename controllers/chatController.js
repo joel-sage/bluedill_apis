@@ -35,6 +35,20 @@ const message = async (req, res) => {
  
 const chats = async (req, res) => {
     const { chat_id } = req.body;
+
+    const get_chats = await prisma.chats.findMany({
+        where: {
+            sender_user_id: chat_id.toString()
+        },
+        select: {
+            receiver_user_id: true,
+            status: true,
+            createdAt: true
+        }
+    })
+
+    res.status(200).json({get_chats});
+
     // db_con.query(`SELECT message.*, u.first_name, u.last_name FROM chats message
     // INNER JOIN (
     //     SELECT receiver_id, MAX(date) AS max_timestamp
@@ -57,23 +71,55 @@ const chats = async (req, res) => {
 
 const chat = async (req, res) => {
     const { chat_id, receiver_id } = req.body;
-    db_con.query(`SELECT * FROM ${`chats`} WHERE ${`user_id`} = ${chat_id} AND ${`receiver_id`} = ${receiver_id}`, (err, success) => {
-        if (err) throw err;
-        if (success.length < 1) {
-            res.status(200).json({ "Warning": "No chat made with this user" });
-        } else {
-            res.status(200).json({ "Messages": success });
+
+    const chat = await prisma.chats.findMany({
+        where: {
+            sender_user_id: chat_id,
+            receiver_user_id: receiver_id,
+        },
+        select: {
+            message: true,
+            createdAt: true,
+            id: true
         }
+            
     })
+    res.status(200).json({"chat": chat})
+ 
+    // SELECTING A PARTICULAR CHAT WITH A SPECIFIC USER
+    // db_con.query(`SELECT * FROM ${`chats`} WHERE ${`user_id`} = ${chat_id} AND ${`receiver_id`} = ${receiver_id}`, (err, success) => {
+    //     if (err) throw err;
+    //     if (success.length < 1) {
+    //         res.status(200).json({ "Warning": "No chat made with this user" });
+    //     } else {
+    //         res.status(200).json({ "Messages": success });
+    //     }
+    // })
 }
 
 const updateMessageStatus = async (req, res) => {
-    const { unread_msg_id, user_id } = req.body;
+    const { message_id, view_id } = req.body;
+    // UPDATING MESSAGE AND SETTING AN OPENED MESSAGE AS SEEN WHEN A USER OPENS THE CHAT
+    try {
+        const seen = await prisma.chats.update({
+            where: {
+                id: message_id,
+                receiver_user_id: view_id
+            }, 
+            data: {
+                status: true
+            }
+        })
+        res.status(200).json({"Info":"This chat is marked seen"})
+    } catch (error) {
+        res.status(200).json({"Error":"Could not mark chat as seen"})
+    }
 
-    db_con.query(`UPDATE chats SET status = 1 WHERE id = ${user_id} AND receiver_id = ${unread_msg_id}`, (err, success) => {
-        if (err) throw err;
-        res.status(200).json({"Alert": `Messages For User ${unread_msg_id} Has been set to Viewed`, success});
-    })
+
+    // db_con.query(`UPDATE chats SET status = 1 WHERE id = ${user_id} AND receiver_id = ${unread_msg_id}`, (err, success) => {
+    //     if (err) throw err;
+    //     res.status(200).json({"Alert": `Messages For User ${unread_msg_id} Has been set to Viewed`, success});
+    // })
 }
 
 module.exports = {

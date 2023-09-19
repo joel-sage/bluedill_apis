@@ -4,9 +4,8 @@ const jwt = require("jsonwebtoken");
 require('dotenv').config();
 
 // prisma config import
-const { PrismaClient } = require('@prisma/client')
-const prisma = new PrismaClient()
-
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 const create = async (req, res) => {
   const {firstname, lastname, email, company, password } = req.body;
@@ -73,7 +72,7 @@ const loginWithAuthentication = async (req, res) => {
       firstname: true,
       lastname: true,
       company: true,
-    }
+    } 
   })  
 
   if (userDetails != null) { 
