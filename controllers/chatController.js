@@ -69,32 +69,17 @@ const chats = async (req, res) => {
                     in: allUsersId,
                 },
             },
+            select: {
+                userId: true,
+                email: true,
+                firstname: true,
+                lastname: true,
+                company: true
+            }
         });
-
-        // const lastChats = await prisma.chat.findMany({ 
-        //     where: {
-        //         OR: [
-        //             {
-        //                 senderUserId: {
-        //                     in: allUsersId,
-        //                 },
-        //                 receiverUserId: userId,
-        //             },
-        //             {
-        //                 senderUserId: userId,
-        //                 receiverUserId: {
-        //                     in: allUsersId,
-        //                 },
-        //             },
-        //         ],
-        //     },
-        //     orderBy: {
-        //         createdAt: 'desc',
-        //     }
-        // });
+    
         res.status(200).json({
-            users,
-            lastChats
+            users
         })
 
         // async function getLastMessage(uId, ursId) {
