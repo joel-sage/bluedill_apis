@@ -10,8 +10,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Users {
-  @@map("users")
+model User {
   id Int @id @default(autoincrement())
   userId String @unique
   email String @unique
@@ -19,24 +18,24 @@ model Users {
   lastname String
   password String
   company String
+  chats Chat[]
+}
+
+model Chat {
+  id Int @id @default(autoincrement()) 
+  message String
+  senderUserId Int
+  receiverUserId Int
+  status Boolean
+  user User @relation(fields: [senderUserId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Template {
-  @@map("template")
   id Int @id @default(autoincrement())
   templateName String @unique
   file_name String
   template_id String
   date_uploaded DateTime @default(now())
-}
-
-model Chats {
-  @@map("chats")
-  id Int @id @default(autoincrement()) 
-  message String
-  sender_user_id String
-  receiver_user_id String
-  status Boolean
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }

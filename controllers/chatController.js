@@ -2,27 +2,37 @@ const { db_con } = require('../hooks/mysqlDB')
 const { currentDate } = require('../hooks/useCurrentDate');
 // prisma config import
 const { PrismaClient } = require('@prisma/client')
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 
 const message = async (req, res) => {
     const { sender_id, receiver_id, message } = req.body;
 
     try {
-        const send_message = await prisma.chats.create({
+        const person = await prisma.user.findUnique({
+            where: {
+                id: Number(sender_id)
+            }
+        })
+        // console.log(person)
+        // return;
+        const send_message = await prisma.chat.create({
             data: {
+                user: {
+                    connect: { id: person.id },
+                },
                 message: message,
-                sender_user_id: sender_id,
-                receiver_user_id: receiver_id,
-                status: false,
+                receiverUserId: Number(receiver_id),
+                status: false
             }
         })
 
         res.status(200).json({
-            "message": "Message Sent"
-        }) 
+            "message": "Message Sent",
+            send_message
+        })
 
-    } catch (error) { 
+    } catch (error) {
         console.log(error)
         res.status(500).json({
             "message": "Could not send Message",
@@ -32,69 +42,114 @@ const message = async (req, res) => {
         prisma.$disconnect()
     }
 };
- 
+
 const chats = async (req, res) => {
-    const { chat_id } = req.body;
+    const { userId } = req.body;
+    // try {
 
-    const get_chats = await prisma.chats.findMany({
-        where: {
-            sender_user_id: chat_id.toString()
-        },
-        select: {
-            receiver_user_id: true,
-            status: true,
-            createdAt: true
-        }
-    })
+        const sentToUsers = await prisma.chat.findMany({
+            where: {
+                senderUserId: userId,
+            },
+            distinct: ['receiverUserId'],
+        }).then((result) => result.map((chat) => chat.receiverUserId));
 
-    res.status(200).json({get_chats});
+        const receivedFromUsers = await prisma.chat.findMany({
+            where: {
+                receiverUserId: userId,
+            },
+            distinct: ['senderUserId'],
+        }).then((result) => result.map((chat) => chat.senderUserId));
 
-    // db_con.query(`SELECT message.*, u.first_name, u.last_name FROM chats message
-    // INNER JOIN (
-    //     SELECT receiver_id, MAX(date) AS max_timestamp
-    //     FROM chats
-    //     WHERE user_id = ${chat_id}
-    //     GROUP BY receiver_id
-    // ) subquery
-    // ON message.receiver_id = subquery.receiver_id
-    // AND message.date = subquery.max_timestamp
-    // JOIN users u ON u.id = subquery.receiver_id
-    // WHERE message.user_id = ${chat_id}`, (err, success) => {
-    //     if (err) throw err;
-    //     if (success.length < 1) {
-    //         res.status(200).json({ "message": "No chat to display...., chats will appear when yhou make any.." })
-    //     } else {
-    //         res.status(200).json({ "message": success });
-    //     }
-    // })
-} 
+        const allUsersId = [...new Set([...sentToUsers, ...receivedFromUsers])];
+
+        const users = await prisma.user.findMany({
+            where: {
+                id: {
+                    in: allUsersId,
+                },
+            },
+        });
+
+        // const lastChats = await prisma.chat.findMany({ 
+        //     where: {
+        //         OR: [
+        //             {
+        //                 senderUserId: {
+        //                     in: allUsersId,
+        //                 },
+        //                 receiverUserId: userId,
+        //             },
+        //             {
+        //                 senderUserId: userId,
+        //                 receiverUserId: {
+        //                     in: allUsersId,
+        //                 },
+        //             },
+        //         ],
+        //     },
+        //     orderBy: {
+        //         createdAt: 'desc',
+        //     }
+        // });
+        res.status(200).json({
+            users,
+            lastChats
+        })
+
+        // async function getLastMessage(uId, ursId) {
+        //     // console.log(uId, ursId);
+        //     // return
+        //     try {
+        //         const lastMessage = await prisma.chat.findFirst({
+        //             where: {
+        //                 receiverUserId: uId,
+        //                 senderUserId: {
+        //                     in: ursId,
+        //                 },
+        //             },
+        //             orderBy: {
+        //                 createdAt: 'desc',
+        //             },
+        //         });
+        //         return lastMessage;
+        //     } catch (error) {
+        //         console.error('Error fetching last message:', error);
+        //         throw error;
+        //     }
+        // }
+
+        // getLastMessage(userId, allUsersId).then((lastMessage) => {
+        //     res.status(200).json({ "Recent": lastMessage })
+        // }).catch((error) => {
+        //     res.status(200).json({ "ERROR": error })
+        // });
+
+
+    // } catch (error) {
+    //     res.status(500).json({ "AN ERROR OCCURED": error })
+    // }
+}
+
 
 const chat = async (req, res) => {
     const { chat_id, receiver_id } = req.body;
 
-    const chat = await prisma.chats.findMany({
+    const chat = await prisma.chat.findMany({
         where: {
-            sender_user_id: chat_id,
-            receiver_user_id: receiver_id,
+            OR: [
+                { senderUserId: chat_id, receiverUserId: receiver_id },
+                { senderUserId: receiver_id, receiverUserId: chat_id }
+            ]
+
         },
         select: {
             message: true,
             createdAt: true,
             id: true
         }
-            
     })
-    res.status(200).json({"chat": chat})
- 
-    // SELECTING A PARTICULAR CHAT WITH A SPECIFIC USER
-    // db_con.query(`SELECT * FROM ${`chats`} WHERE ${`user_id`} = ${chat_id} AND ${`receiver_id`} = ${receiver_id}`, (err, success) => {
-    //     if (err) throw err;
-    //     if (success.length < 1) {
-    //         res.status(200).json({ "Warning": "No chat made with this user" });
-    //     } else {
-    //         res.status(200).json({ "Messages": success });
-    //     }
-    // })
+    res.status(200).json({ "chat": chat })
 }
 
 const updateMessageStatus = async (req, res) => {
@@ -105,21 +160,15 @@ const updateMessageStatus = async (req, res) => {
             where: {
                 id: message_id,
                 receiver_user_id: view_id
-            }, 
+            },
             data: {
                 status: true
             }
         })
-        res.status(200).json({"Info":"This chat is marked seen"})
+        res.status(200).json({ "Info": "This chat is marked seen" })
     } catch (error) {
-        res.status(200).json({"Error":"Could not mark chat as seen"})
+        res.status(200).json({ "Error": "Could not mark chat as seen" })
     }
-
-
-    // db_con.query(`UPDATE chats SET status = 1 WHERE id = ${user_id} AND receiver_id = ${unread_msg_id}`, (err, success) => {
-    //     if (err) throw err;
-    //     res.status(200).json({"Alert": `Messages For User ${unread_msg_id} Has been set to Viewed`, success});
-    // })
 }
 
 module.exports = {
