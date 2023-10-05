@@ -3,7 +3,165 @@ const { currentDate } = require('../hooks/useCurrentDate');
 // prisma config import
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient();
+let clients = [];
 
+const IO = (io) => {
+    io.on('connection', (socket) => {
+        // ASIGN AN ID BASED ON THE USER THAT IS CONNECTED
+        socket.emit('welcome', 'SOCK_ID: ' + socket.id);
+        socket.on('connected', (user_id) => {
+            clients.push(
+                {
+                    userID: user_id,
+                    sockID: socket.id,
+                }
+            )
+            // console.log(clients);
+            if (clients.length > 0) {
+                socket.broadcast.emit('connected', 'USER ' + clients.at(-1).userID + ' JOINED');
+            }
+        })
+
+        // Handle events from the client
+        socket.on('message', async (message, s_ID, r_ID, cb) => {
+            try {
+                const person = await prisma.user.findUnique({
+                    where: {
+                        id: Number(s_ID)
+                    }
+                })
+                
+                const send_message = await prisma.chat.create({
+                    data: {
+                        user: {
+                            connect: { id: person.id },
+                        },
+                        message: message,
+                        receiverUserId: Number(r_ID),
+                        status: false
+                    }
+                })
+
+                cb('MESSAGE SENT');
+            } catch (error) {
+                console.log(error)
+                cb('AN ERROR OCCURED');
+            } finally {
+                prisma.$disconnect()
+            }
+
+            clients.forEach((client, id) => {
+                const { userID, sockID } = client;
+
+                if (r_ID == userID) {
+                    // console.clear()
+                    // console.log(`User:${userID} with sockID:${sockID} To message`);
+                    io.to(sockID).emit('sendback', socket.id + " said: " + message);
+                }
+            })
+        });
+
+        socket.on('chat', async (s_ID, r_ID, cb) => {
+            try {
+                const chat = await prisma.chat.findMany({
+                    where: {
+                        OR: [
+                            { senderUserId: s_ID, receiverUserId: r_ID },
+                            { senderUserId: r_ID, receiverUserId: s_ID }
+                        ]
+                    },
+                    select: {
+                        message: true,
+                        createdAt: true,
+                        id: true
+                    }
+                })
+                cb(chat);
+            } catch (error) {
+                cb('An Error Occured' + error);
+            } finally { 
+                prisma.$disconnect()
+            }
+        })
+
+        socket.on('chats', async (userId, cb) => {
+            try {
+                const sentToUsers = await prisma.chat.findMany({
+                    where: {
+                        senderUserId: userId,
+                    },
+                    distinct: ['receiverUserId'],
+                }).then((result) => result.map((chat) => chat.receiverUserId));
+
+                const receivedFromUsers = await prisma.chat.findMany({
+                    where: {
+                        receiverUserId: userId,
+                    },
+                    distinct: ['senderUserId'],
+                }).then((result) => result.map((chat) => chat.senderUserId));
+
+                const allUsersId = [...new Set([...sentToUsers, ...receivedFromUsers])];
+
+                const users = await prisma.user.findMany({
+                    where: {
+                        id: {
+                            in: allUsersId,
+                        },
+                    },
+                    select: {
+                        userId: true,
+                        email: true,
+                        firstname: true,
+                        lastname: true,
+                        company: true
+                    }
+                });
+
+                cb(users);
+            } catch (error) {
+                cb('AN ERROR OCCURED' + error)
+            }
+        })
+
+        socket.on('read-message', async (messages_ids, view_id, cb) => {
+            try {
+                const seen = await prisma.chat.update({
+                    where: {
+                        id: {
+                            in: messages_ids,  // Array of IDs to match
+                        },
+                        // Additional condition for a specific ID
+                        AND: {
+                            receiverUserId: view_id,  // Single ID to match
+                        },
+                    },
+                    data: {
+                        status: true
+                    }
+                })
+                cb("Info: This chat is marked seen");
+            } catch (error) {
+                cb("Error: Could not mark chat as seen")
+            }
+        })
+        // Handle disconnection
+        socket.on('disconnect', (cb) => {
+
+            clients.forEach((client, id) => {
+                const { userID, sockID } = client;
+
+                if (sockID == socket.id) {
+                    clients.splice(id, 1)
+                    // console.log(`User:${userID} with sockID:${sockID} Disconnected`);
+                    socket.broadcast.emit('disconnected', userID + ' IS WENT OFFLINE');
+                    // console.clear()
+                    // console.log(clients)
+                }
+            })
+        });
+
+    });
+}
 
 const message = async (req, res) => {
     const { sender_id, receiver_id, message } = req.body;
@@ -45,7 +203,7 @@ const message = async (req, res) => {
 
 const chats = async (req, res) => {
     const { userId } = req.body;
-    // try {
+    try {
 
         const sentToUsers = await prisma.chat.findMany({
             where: {
@@ -77,74 +235,51 @@ const chats = async (req, res) => {
                 company: true
             }
         });
-    
+
         res.status(200).json({
             users
         })
 
-        // async function getLastMessage(uId, ursId) {
-        //     // console.log(uId, ursId);
-        //     // return
-        //     try {
-        //         const lastMessage = await prisma.chat.findFirst({
-        //             where: {
-        //                 receiverUserId: uId,
-        //                 senderUserId: {
-        //                     in: ursId,
-        //                 },
-        //             },
-        //             orderBy: {
-        //                 createdAt: 'desc',
-        //             },
-        //         });
-        //         return lastMessage;
-        //     } catch (error) {
-        //         console.error('Error fetching last message:', error);
-        //         throw error;
-        //     }
-        // }
-
-        // getLastMessage(userId, allUsersId).then((lastMessage) => {
-        //     res.status(200).json({ "Recent": lastMessage })
-        // }).catch((error) => {
-        //     res.status(200).json({ "ERROR": error })
-        // });
-
-
-    // } catch (error) {
-    //     res.status(500).json({ "AN ERROR OCCURED": error })
-    // }
+    } catch (error) {
+        res.status(500).json({ "AN ERROR OCCURED": error })
+    }
 }
-
 
 const chat = async (req, res) => {
     const { chat_id, receiver_id } = req.body;
-
-    const chat = await prisma.chat.findMany({
-        where: {
-            OR: [
-                { senderUserId: chat_id, receiverUserId: receiver_id },
-                { senderUserId: receiver_id, receiverUserId: chat_id }
-            ]
-
-        },
-        select: {
-            message: true,
-            createdAt: true,
-            id: true
-        }
-    })
-    res.status(200).json({ "chat": chat })
+    try { 
+        const chat = await prisma.chat.findMany({
+            where: {
+                OR: [
+                    { senderUserId: chat_id, receiverUserId: receiver_id },
+                    { senderUserId: receiver_id, receiverUserId: chat_id }
+                ]
+            },
+            select: {
+                message: true,
+                createdAt: true,
+                id: true
+            }
+        })
+        res.status(200).json({ "chat": chat })
+    } catch (error) {
+        res.status(400).json({ "Message": "An Error Occured" })
+    }
 }
 
 const updateMessageStatus = async (req, res) => {
-    const { message_id, view_id } = req.body;
+    const { messages_ids, view_id } = req.body;
     // UPDATING MESSAGE AND SETTING AN OPENED MESSAGE AS SEEN WHEN A USER OPENS THE CHAT
     try {
-        const seen = await prisma.chats.update({
+        const seen = await prisma.chat.update({
             where: {
-                id: message_id,
-                receiver_user_id: view_id
+                id: {
+                    in: messages_ids,  // Array of IDs to match
+                },
+                // Additional condition for a specific ID
+                AND: {
+                    receiverUserId: view_id,  // Single ID to match
+                },
             },
             data: {
                 status: true
@@ -161,4 +296,5 @@ module.exports = {
     chats,
     chat,
     updateMessageStatus,
+    IO
 } 

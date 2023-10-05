@@ -18,7 +18,8 @@ model User {
   lastname String
   password String
   company String
-  chats Chat[]
+  chats Chat[] @relation("chat_key")
+  collabortion Collaboration[] @relation("collab_key")
 }
 
 model Chat {
@@ -27,7 +28,7 @@ model Chat {
   senderUserId Int
   receiverUserId Int
   status Boolean
-  user User @relation(fields: [senderUserId], references: [id])
+  user User @relation("chat_key", fields: [senderUserId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -38,4 +39,12 @@ model Template {
   file_name String
   template_id String
   date_uploaded DateTime @default(now())
+}
+
+model Collaboration {
+  id Int @id @default(autoincrement())
+  collabId Int
+  collabRoomId String
+  user User @relation("collab_key", fields: [collabId], references: [id])
+  joindAt DateTime @default(now())
 }
