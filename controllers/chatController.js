@@ -16,7 +16,7 @@ const IO = (io) => {
                     sockID: socket.id,
                 }
             )
-            // console.log(clients);
+            // console.log(`${socket.id}: CONNECTEED TO THE SERVER`);
             if (clients.length > 0) {
                 socket.broadcast.emit('connected', 'USER ' + clients.at(-1).userID + ' JOINED');
             }
@@ -144,9 +144,12 @@ const IO = (io) => {
                 cb("Error: Could not mark chat as seen")
             }
         })
+
+    
+
         // Handle disconnection
         socket.on('disconnect', (cb) => {
-
+            console.log(`${socket.id}: LEFT`)
             clients.forEach((client, id) => {
                 const { userID, sockID } = client;
 

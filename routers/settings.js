@@ -5,5 +5,5 @@ const { jwtVerification } = require("../middleware/authUserVerification.js");
 
 router.route('/setting').post( jwtVerification ,putSettings);
 router.route('/settings').get( jwtVerification ,getSettings);
-
+router.route('/changePassword').post()
 module.exports = router
